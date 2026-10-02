@@ -6,7 +6,7 @@
    CONFIGURAÇÃO DO BACKEND
    ========================================= */
 // 🔧 ALTERE AQUI quando fizer deploy no Render
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://gm-cal-ados-e-variedades-1.onrender.com/";
 
 /* =========================================
    SPLASH SCREEN (executa primeiro)
