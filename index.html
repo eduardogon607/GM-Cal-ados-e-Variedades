@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#d4af37" />
+  <title>GM Calçados e Variedades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ================= SPLASH SCREEN ================= -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-content">
+      <img src="logo.png" alt="GM Calçados" class="splash-logo" onerror="this.style.display='none'" />
+      <div class="splash-text">
+        <h1><span class="gm">GM</span> Calçados</h1>
+        <p>& Variedades</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HEADER ================= -->
+  <header class="header">
+    <div class="top-bar">
+      <p>Frete Grátis</p>
+    </div>
+
+    <div class="main-header">
+      <div class="logo">
+        <img src="logo.png" alt="GM Calçados" class="logo-img" onerror="this.style.display='none'" />
+        <div class="logo-text">
+          <h1><span class="gm">GM</span> Calçados</h1>
+          <p class="subtitle">& Variedades</p>
+        </div>
+      </div>
+
+      <div class="header-icons">
+        <button class="icon" id="cartIcon" aria-label="Carrinho">
+          🛒 <span class="cart-count" id="cartCount">0</span>
+        </button>
+        <button class="icon" id="accountIcon" aria-label="Conta">👤</button>
+      </div>
+    </div>
+
+    <div class="main-search">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Buscar tênis, acessórios..." />
+        <button id="searchBtn" aria-label="Buscar">🔍</button>
+      </div>
+    </div>
+
+    <nav class="nav-bar">
+      <a href="#">Início</a>
+      <a href="#">Tênis</a>
+      <a href="#">Masculino</a>
+      <a href="#">Feminino</a>
+      <a href="#">Infantil</a>
+      <a href="#">Promoções 🔥</a>
+    </nav>
+  </header>
+
+  <!-- ================= BANNER ================= -->
+  <section class="banner">
+    <div class="banner-content">
+      <h2>Coleção Premium</h2>
+      <p>Tênis exclusivos com até 50% OFF</p>
+      <button>Ver Ofertas</button>
+    </div>
+  </section>
+
+  <!-- ================= CATEGORIAS ================= -->
+  <section class="categories">
+    <h2 class="section-title">Categorias</h2>
+
+    <div class="category-grid">
+      <div class="category-card" data-category="casual">
+        <span class="category-icon">👟</span>
+        <span class="category-label">Casual</span>
+      </div>
+
+      <div class="category-card has-sub" data-category="esportivos">
+        <span class="category-icon">🏃</span>
+        <span class="category-label">Esportivos</span>
+        <span class="sub-arrow">▾</span>
+      </div>
+
+      <div class="category-card" data-category="feminino">
+        <span class="category-icon">👠</span>
+        <span class="category-label">Feminino</span>
+      </div>
+
+      <div class="category-card" data-category="infantil">
+        <span class="category-icon">🧒</span>
+        <span class="category-label">Infantil</span>
+      </div>
+
+      <div class="category-card" data-category="social">
+        <span class="category-icon">👞</span>
+        <span class="category-label">Social</span>
+      </div>
+
+      <div class="category-card has-sub" data-category="acessorios">
+        <span class="category-icon">🕶️</span>
+        <span class="category-label">Acessórios</span>
+        <span class="sub-arrow">▾</span>
+      </div>
+    </div>
+
+    <div class="subcategory-panel" id="subcategoryPanel">
+      <div class="subcategory-header">
+        <h3 id="subcategoryTitle">Subcategorias</h3>
+        <button id="closeSubcategory" aria-label="Fechar">✖</button>
+      </div>
+      <div class="subcategory-grid" id="subcategoryGrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= PRODUTOS ================= -->
+  <section class="products-section">
+    <h2 class="section-title" id="productsTitle">🔥 Mais Vendidos</h2>
+    <div class="products-grid" id="productsGrid"></div>
+  </section>
+
+  <!-- ================= CARRINHO ================= -->
+  <aside class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h3>Meu Carrinho</h3>
+      <button id="closeCart" aria-label="Fechar carrinho">✖</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <p class="empty-cart">Seu carrinho está vazio 🛒</p>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        Total: <span id="cartTotal">R$ 0,00</span>
+      </div>
+      <button class="checkout-btn">Finalizar Compra</button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <h3>GM Calçados e Variedades</h3>
+        <p>Qualidade e estilo para seus pés.</p>
+      </div>
+
+      <div>
+        <h4>Fale Conosco</h4>
+        <div class="contact-buttons">
+          <a
+            href="https://www.instagram.com/gmcalcados02?stkn=aHBlYjk1eDk0YTdk"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="contact-btn instagram"
+            aria-label="Instagram da GM Calçados"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07-3.2 0-3.58-.01-4.85-.07-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.92 3.9 2.38 7.15 2.23 8.42 2.18 8.8 2.16 12 2.16zm0-2.16C8.74 0 8.33.01 7.05.07 2.7.27.27 2.7.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.36 2.62 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.35-.2 6.78-2.62 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95C23.73 2.71 21.3.27 16.95.07 15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1 0 12 18.16 6.16 6.16 0 0 0 12 5.84zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-11.85a1.44 1.44 0 1 1 0 2.88 1.44 1.44 0 0 1 0-2.88z"/>
+            </svg>
+            <span>@gmcalcados02</span>
+          </a>
+
+          <button
+            type="button"
+            class="contact-btn whatsapp"
+            id="btnWhatsapp"
+            aria-label="WhatsApp dos vendedores"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.693.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            </svg>
+            <span>WhatsApp</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h4>Pagamento</h4>
+        <p>💳 Cartão Débito e Crédito | PIX</p>
+      </div>
+    </div>
+    <p class="copyright">© 2026 GM Calçados e Variedades - Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- ================= MODAL DE LOGIN ================= -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🔐 Acesso Administrativo</h3>
+        <button class="modal-close" data-close="loginModal">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="loginUser">Usuário</label>
+          <input type="text" id="loginUser" placeholder="Digite o usuário" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="loginPass">Senha</label>
+          <input type="password" id="loginPass" placeholder="Digite a senha" autocomplete="current-password" />
+        </div>
+        <p class="login-error" id="loginError"></p>
+        <button class="modal-btn primary" id="loginSubmitBtn">Entrar</button>
+        <p class="login-hint">Padrão: <strong>admin</strong> / <strong>admin123</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PAINEL ADMIN ================= -->
+  <div class="modal-overlay" id="adminPanel">
+    <div class="modal modal-large">
+      <div class="modal-header">
+        <h3>⚙️ Painel do Administrador</h3>
+        <div class="admin-header-actions">
+          <button class="modal-btn small" id="logoutBtn">Sair</button>
+          <button class="modal-close" data-close="adminPanel">✖</button>
+        </div>
+      </div>
+      <div class="modal-body">
+
+        <h4 class="admin-section-title">➕ Adicionar Novo Produto</h4>
+        <form id="addProductForm" class="admin-form">
+          <div class="form-group">
+            <label for="pName">Nome do produto *</label>
+            <input type="text" id="pName" placeholder="Ex: Tênis Nike Air Max" required />
+          </div>
+
+          <div class="form-group">
+            <label>Fotos do produto * <span class="form-help-inline">(até 5 fotos)</span></label>
+            <div class="photo-upload">
+              <input type="file" id="pPhoto" accept="image/*" multiple hidden />
+              <label for="pPhoto" class="photo-upload-btn" id="photoUploadBtn">
+                <span class="photo-upload-icon">📷</span>
+                <span class="photo-upload-text">Clique para adicionar fotos</span>
+                <span class="photo-upload-hint">Você pode escolher várias de uma vez</span>
+              </label>
+              <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pPrice">Preço (R$) *</label>
+              <input type="number" id="pPrice" step="0.01" min="0" placeholder="499.90" required />
+            </div>
+            <div class="form-group">
+              <label for="pCategory">Categoria *</label>
+              <select id="pCategory" required>
+                <option value="">Selecione...</option>
+                <option value="casual">👟 Casual</option>
+                <option value="esportivos">🏃 Esportivos</option>
+                <option value="feminino">👠 Feminino</option>
+                <option value="infantil">🧒 Infantil</option>
+                <option value="social">👞 Social</option>
+                <option value="acessorios">🕶️ Acessórios</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="subcategoryFormGroup" style="display:none;">
+            <label for="pSubcategory">Subcategoria *</label>
+            <select id="pSubcategory">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pDescription">Descrição do produto</label>
+            <textarea id="pDescription" rows="3" placeholder="Ex: Tênis leve e confortável, ideal para corridas..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="pSizes">Tamanhos disponíveis</label>
+            <input type="text" id="pSizes" placeholder="Ex: 37, 38, 39, 40, 41, 42" />
+            <small class="form-help">Separe por vírgula. Deixe vazio se não houver tamanhos.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pRating">Avaliação (0-5)</label>
+              <input type="number" id="pRating" step="0.1" min="0" max="5" placeholder="4.8" value="5.0" />
+            </div>
+            <div class="form-group">
+              <label for="pBadge">Selo (badge)</label>
+              <select id="pBadge">
+                <option value="NOVO">NOVO</option>
+                <option value="OFF">OFF</option>
+                <option value="🔥 Top">🔥 Top</option>
+                <option value="LIMITADO">LIMITADO</option>
+                <option value="">Nenhum</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="modal-btn primary">Adicionar Produto</button>
+        </form>
+
+        <h4 class="admin-section-title">📦 Produtos Cadastrados (<span id="adminProductCount">0</span>)</h4>
+        <div class="admin-product-list" id="adminProductList"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE DETALHES DO PRODUTO ================= -->
+  <div class="modal-overlay product-modal" id="productModal">
+    <div class="product-modal-content">
+      <button class="product-modal-close" id="closeProductModal" aria-label="Fechar">✖</button>
+
+      <div class="product-modal-image">
+        <div class="product-modal-media" id="pdMedia"></div>
+        <div class="product-modal-badge" id="pdBadge"></div>
+
+        <button class="pd-nav pd-nav-prev" id="pdPrev" aria-label="Foto anterior" style="display:none;">‹</button>
+        <button class="pd-nav pd-nav-next" id="pdNext" aria-label="Próxima foto" style="display:none;">›</button>
+
+        <div class="pd-dots" id="pdDots"></div>
+      </div>
+
+      <div class="product-modal-info">
+        <h2 class="product-modal-name" id="pdName"></h2>
+        <div class="product-modal-rating" id="pdRating"></div>
+
+        <div class="product-modal-price">
+          <span class="product-modal-price-value" id="pdPrice"></span>
+        </div>
+
+        <div class="product-modal-description" id="pdDescription"></div>
+
+        <div class="product-modal-sizes" id="pdSizesWrapper">
+          <label class="product-modal-label">Tamanhos disponíveis:</label>
+          <div class="sizes-grid" id="pdSizes"></div>
+        </div>
+
+        <div class="product-modal-quantity">
+          <label class="product-modal-label">Quantidade:</label>
+          <div class="qty-selector">
+            <button class="qty-btn" id="pdQtyMinus" aria-label="Diminuir">−</button>
+            <span class="qty-value" id="pdQty">1</span>
+            <button class="qty-btn" id="pdQtyPlus" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+
+        <button class="product-modal-add-btn" id="pdAddBtn">🛒 Adicionar ao Carrinho</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE WHATSAPP ================= -->
+  <div class="modal-overlay whatsapp-modal" id="whatsappModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>💬 Falar com um vendedor</h3>
+        <button class="modal-close" data-close="whatsappModal">✖</button>
+      </div>
+      <div class="modal-body">
+        <p class="whatsapp-hint">Escolha um vendedor para iniciar a conversa:</p>
+
+        <div class="whatsapp-list">
+          <a
+            href="https://wa.me/5591986257230?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20GM%20Cal%C3%A7ados%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="whatsapp-item"
+          >
+            <div class="whatsapp-avatar">M</div>
+            <div class="whatsapp-info">
+              <div class="whatsapp-name">Messias</div>
+              <div class="whatsapp-phone">+55 91 8625-7230</div>
+            </div>
+            <span class="whatsapp-arrow">›</span>
+          </a>
+
+          <a
+            href="https://wa.me/559885343372?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20GM%20Cal%C3%A7ados%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="whatsapp-item"
+          >
+            <div class="whatsapp-avatar">V</div>
+            <div class="whatsapp-info">
+              <div class="whatsapp-name">Vitória</div>
+              <div class="whatsapp-phone">+55 98 8534-3372</div>
+            </div>
+            <span class="whatsapp-arrow">›</span>
+          </a>
+
+          <a
+            href="https://wa.me/559884062039?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20GM%20Cal%C3%A7ados%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="whatsapp-item"
+          >
+            <div class="whatsapp-avatar">J</div>
+            <div class="whatsapp-info">
+              <div class="whatsapp-name">Gustavo</div>
+              <div class="whatsapp-phone">+55 98 8406-2039</div>
+            </div>
+            <span class="whatsapp-arrow">›</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

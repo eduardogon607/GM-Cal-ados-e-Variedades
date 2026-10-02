@@ -1,0 +1,14 @@
+# Copie este arquivo para .env e preencha com seus valores
+
+# ============================================
+# ASAAS
+# ============================================
+ASAAS_API_KEY=
+ASAAS_SANDBOX=false
+
+# ============================================
+# SERVIDOR
+# ============================================
+PORT=3000
+FRONTEND_URL=
+BACKEND_URL=
