@@ -2057,3 +2057,24 @@ input, select, textarea { font-family: inherit; outline: none; }
   .product-modal-name { font-size: 24px; }
   .product-modal-price-value { font-size: 32px; }
 }
+
+
+
+/* =========================================
+   BOTÃO DE ADMIN INVISÍVEL
+   ========================================= */
+#accountIcon {
+  opacity: 0;
+  pointer-events: auto;
+  cursor: default;
+  width: 40px;
+  height: 40px;
+}
+
+/* Desktop: pequena dica visual no hover (opcional) */
+@media (min-width: 900px) {
+  #accountIcon:hover {
+    opacity: 0.15;
+    transition: opacity 0.3s ease;
+  }
+}

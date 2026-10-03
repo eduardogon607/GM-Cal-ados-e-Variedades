@@ -44,7 +44,7 @@ const DEFAULT_PRODUCTS = [
 /* ---------- CONFIGURAÇÃO DO ADMIN ---------- */
 const ADMIN_CREDENTIALS = {
   user: "admin",
-  pass: "admin123",
+  pass: "Gmloja",
 };
 
 /* ---------- SESSÃO ---------- */
