@@ -235,11 +235,16 @@
           <div class="form-group">
             <label>Fotos do produto * <span class="form-help-inline">(até 5 fotos)</span></label>
             <div class="photo-upload">
-              <input type="file" id="pPhoto" accept="image/*" multiple hidden />
+              <input type="file" id="pPhoto" accept="image/*,video/*" multiple hidden />
               <label for="pPhoto" class="photo-upload-btn" id="photoUploadBtn">
-                <span class="photo-upload-icon">📷</span>
-                <span class="photo-upload-text">Clique para adicionar fotos</span>
-                <span class="photo-upload-hint">Você pode escolher várias de uma vez</span>
+               
+             <label for="pPhoto" class="photo-upload-btn" id="photoUploadBtn">
+  <span class="photo-upload-icon">📷</span>
+  <span class="photo-upload-text">Clique para adicionar fotos ou vídeos</span>
+  <span class="photo-upload-hint">Fotos ou vídeos até 20MB • Máximo 5 arquivos</span>
+</label>
+
+
               </label>
               <div class="photo-preview-grid" id="photoPreviewGrid"></div>
             </div>

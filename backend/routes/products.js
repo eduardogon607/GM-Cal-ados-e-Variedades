@@ -58,15 +58,23 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB por foto
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB por arquivo
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|webp|gif/i;
-    const ext = allowed.test(path.extname(file.originalname));
-    const mime = allowed.test(file.mimetype);
+    // Aceita imagens e vídeos
+    const allowedExt = /jpeg|jpg|png|webp|gif|mp4|webm|mov|avi/i;
+    const allowedMime = /image\/|video\//i;
+
+    const ext = allowedExt.test(path.extname(file.originalname));
+    const mime = allowedMime.test(file.mimetype);
+
     if (ext && mime) return cb(null, true);
-    cb(new Error("Apenas imagens são permitidas"));
+    cb(new Error("Apenas imagens e vídeos são permitidos"));
   },
 });
+
+
+
+
 
 // ============================================
 // HELPERS

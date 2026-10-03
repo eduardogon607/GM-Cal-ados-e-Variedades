@@ -116,13 +116,27 @@ async function deleteProduct(id) {
 /* =========================================
    HELPERS
    ========================================= */
+
+
+
 function getProductMediaHTML(p) {
-  if (Array.isArray(p.photos) && p.photos.length > 0) {
-    return `<img src="${p.photos[0]}" alt="${p.name}" />`;
+  const url = (Array.isArray(p.photos) && p.photos[0]) || p.photo;
+
+  if (url) {
+    // Detecta se é vídeo pela extensão
+    const isVideo = /\.(mp4|webm|mov|avi)$/i.test(url);
+    if (isVideo) {
+      return `<video src="${url}" muted autoplay loop playsinline></video>`;
+    }
+    return `<img src="${url}" alt="${p.name}" />`;
   }
-  if (p.photo) return `<img src="${p.photo}" alt="${p.name}" />`;
+
   return p.emoji || "👟";
 }
+
+
+
+
 
 function getProductPhotosCount(p) {
   if (Array.isArray(p.photos) && p.photos.length > 0) return p.photos.length;
@@ -659,6 +673,9 @@ const photoUploadBtn = document.getElementById("photoUploadBtn");
 const MAX_PHOTOS = 5;
 let currentPhotos = [];
 
+
+
+
 function renderPhotoPreviews() {
   if (currentPhotos.length === 0) {
     photoPreviewGrid.classList.remove("active");
@@ -672,15 +689,25 @@ function renderPhotoPreviews() {
   photoPreviewGrid.classList.add("active");
 
   photoPreviewGrid.innerHTML = currentPhotos
-    .map(
-      (src, i) => `
-      <div class="photo-preview-item">
-        <img src="${src}" alt="Foto ${i + 1}" />
-        ${i === 0 ? '<span class="pp-cover">CAPA</span>' : ""}
-        <button type="button" class="pp-remove" data-index="${i}" title="Remover">✖</button>
-      </div>
-    `
-    )
+    .map((src, i) => {
+      const isVideo = src.startsWith("data:video/");
+      const media = isVideo
+        ? `<video src="${src}" muted></video>`
+        : `<img src="${src}" alt="Arquivo ${i + 1}" />`;
+
+      const badge = isVideo
+        ? `<span class="pp-video-badge">VÍDEO</span>`
+        : "";
+
+      return `
+        <div class="photo-preview-item">
+          ${media}
+          ${badge}
+          ${i === 0 ? '<span class="pp-cover">CAPA</span>' : ""}
+          <button type="button" class="pp-remove" data-index="${i}" title="Remover">✖</button>
+        </div>
+      `;
+    })
     .join("");
 
   photoPreviewGrid.querySelectorAll(".pp-remove").forEach((btn) => {
@@ -699,7 +726,11 @@ function renderPhotoPreviews() {
   }
 }
 
-pPhotoInput.addEventListener("change", (e) => {
+
+
+
+
+ppPhotoInput.addEventListener("change", (e) => {
   const files = Array.from(e.target.files || []);
   if (files.length === 0) return;
 
@@ -707,14 +738,25 @@ pPhotoInput.addEventListener("change", (e) => {
   const toAdd = files.slice(0, remaining);
 
   if (files.length > remaining) {
-    showToast(`⚠️ Máximo de ${MAX_PHOTOS} fotos (${remaining} adicionadas)`);
+    showToast(`⚠️ Máximo de ${MAX_PHOTOS} arquivos (${remaining} adicionados)`);
   }
 
   let processed = 0;
 
   toAdd.forEach((file) => {
-    if (file.size > 2 * 1024 * 1024) {
-      showToast(`⚠️ "${file.name}" é muito grande (máx. 2MB)`);
+    // Valida tamanho (20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      showToast(`⚠️ "${file.name}" é muito grande (máx. 20MB)`);
+      processed++;
+      return;
+    }
+
+    // Valida tipo
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      showToast(`⚠️ "${file.name}" não é imagem nem vídeo`);
       processed++;
       return;
     }
@@ -733,6 +775,10 @@ pPhotoInput.addEventListener("change", (e) => {
 
   pPhotoInput.value = "";
 });
+
+
+
+
 
 /* =========================================
    CATEGORIA + SUBCATEGORIA (form admin)
@@ -819,14 +865,24 @@ addProductForm.addEventListener("submit", async (e) => {
   formData.append("sizes", sizesRaw);
 
   // Converte cada foto (base64) em Blob e adiciona ao FormData
-  currentPhotos.forEach((photoBase64, index) => {
-    try {
-      const blob = base64ToBlob(photoBase64);
-      formData.append("photos", blob, `foto-${index + 1}.jpg`);
-    } catch (err) {
-      console.warn("Erro ao converter foto", index, err);
-    }
-  });
+  currentPhotos.forEach((base64, index) => {
+  try {
+    const isVideo = base64.startsWith("data:video/");
+    const mimeMatch = base64.match(/data:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    const ext = isVideo
+      ? (mime.includes("mp4") ? "mp4" : "webm")
+      : (mime.includes("png") ? "png" : "jpg");
+
+    const blob = base64ToBlob(base64);
+    formData.append("photos", blob, `arquivo-${index + 1}.${ext}`);
+  } catch (err) {
+    console.warn("Erro ao converter arquivo", index, err);
+  }
+});
+
+
+
 
   // Estado de "enviando" no botão
   const submitBtn = addProductForm.querySelector("button[type='submit']");
@@ -933,6 +989,9 @@ function openProductModal(product) {
   document.body.style.overflow = "hidden";
 }
 
+
+
+
 function renderPdMedia() {
   if (pdPhotosList.length === 0) {
     pdMedia.innerHTML = (currentProduct && currentProduct.emoji) || "👟";
@@ -942,7 +1001,14 @@ function renderPdMedia() {
     return;
   }
 
-  pdMedia.innerHTML = `<img src="${pdPhotosList[pdPhotoIndex]}" alt="${currentProduct.name}" />`;
+  const url = pdPhotosList[pdPhotoIndex];
+  const isVideo = /\.(mp4|webm|mov|avi)$/i.test(url) || url.startsWith("data:video/");
+
+  if (isVideo) {
+    pdMedia.innerHTML = `<video src="${url}" controls autoplay muted playsinline></video>`;
+  } else {
+    pdMedia.innerHTML = `<img src="${url}" alt="${currentProduct.name}" />`;
+  }
 
   if (pdPhotosList.length > 1) {
     pdPrev.style.display = "flex";
@@ -951,7 +1017,7 @@ function renderPdMedia() {
     pdDots.innerHTML = pdPhotosList
       .map(
         (_, i) =>
-          `<button class="pd-dot ${i === pdPhotoIndex ? "active" : ""}" data-index="${i}" aria-label="Foto ${i + 1}"></button>`
+          `<button class="pd-dot ${i === pdPhotoIndex ? "active" : ""}" data-index="${i}" aria-label="Item ${i + 1}"></button>`
       )
       .join("");
 
@@ -967,6 +1033,7 @@ function renderPdMedia() {
     pdDots.innerHTML = "";
   }
 }
+
 
 pdPrev.addEventListener("click", () => {
   if (pdPhotosList.length <= 1) return;
