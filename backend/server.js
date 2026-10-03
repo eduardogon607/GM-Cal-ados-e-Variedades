@@ -26,7 +26,12 @@ app.use(express.urlencoded({ extended: true }));
 // ============================================
 // SERVIR ARQUIVOS ESTÁTICOS (fotos dos produtos)
 // ============================================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "storage", "uploads"))
+);
+
 
 // ============================================
 // LOG de requisições

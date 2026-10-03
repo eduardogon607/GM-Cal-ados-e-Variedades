@@ -9,19 +9,38 @@ const router = express.Router();
 // ============================================
 // CONFIGURAÇÃO DE PASTAS
 // ============================================
-const DATA_DIR = path.join(__dirname, "..", "data");
-const UPLOADS_DIR = path.join(__dirname, "..", "uploads");
+// Pasta raiz de armazenamento (é o disco persistente no Render)
+// Localmente: backend/storage/
+// No Render: /opt/render/project/src/backend/storage/
+const STORAGE_DIR = path.join(__dirname, "..", "storage");
+
+// Subpastas
+const DATA_DIR = path.join(STORAGE_DIR, "data");
+const UPLOADS_DIR = path.join(STORAGE_DIR, "uploads");
 const PRODUCTS_FILE = path.join(DATA_DIR, "produtos.json");
 
-// Cria as pastas se não existirem
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// Cria todas as pastas necessárias
+[DATA_DIR, UPLOADS_DIR].forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`📁 Pasta criada: ${dir}`);
+  }
+});
 
 // Cria o arquivo de produtos se não existir
 if (!fs.existsSync(PRODUCTS_FILE)) {
   fs.writeFileSync(PRODUCTS_FILE, JSON.stringify([], null, 2));
+  console.log(`📄 Arquivo criado: ${PRODUCTS_FILE}`);
 }
 
+console.log(`💾 Storage configurado em: ${STORAGE_DIR}`);
+
+
+
+
+// ============================================
+// CONFIGURAÇÃO DO MULTER (upload de arquivos)
+// ============================================
 // ============================================
 // CONFIGURAÇÃO DO MULTER (upload de arquivos)
 // ============================================
@@ -32,6 +51,10 @@ const storage = multer.diskStorage({
     cb(null, uniqueName);
   },
 });
+
+
+
+
 
 const upload = multer({
   storage,
