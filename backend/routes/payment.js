@@ -36,18 +36,34 @@ router.post("/create-preference", async (req, res) => {
     // Corpo da requisição para o Asaas
     // billingTypes: PIX e CREDIT_CARD (aceita ambos)
     // chargeTypes: DETACHED (pagamento à vista)
-    const checkoutBody = {
-      billingTypes: ["PIX", "CREDIT_CARD"],
-      chargeTypes: ["DETACHED"],
-      minutesToExpire: 60,
-      externalReference: `pedido-${Date.now()}`,
-      callback: {
-        successUrl: `${process.env.BACKEND_URL}/success`,
-        cancelUrl: `${process.env.BACKEND_URL}/failure`,
-        expiredUrl: `${process.env.BACKEND_URL}/pending`,
-      },
-      items: formattedItems,
-    };
+   
+
+const checkoutBody = {
+  billingTypes: ["PIX", "CREDIT_CARD"],
+  chargeTypes: ["DETACHED", "INSTALLMENT"], // ← à vista OU parcelado
+  installment: {
+    maxInstallmentCount: 3 // ← máximo de 3 parcelas
+  },
+  minutesToExpire: 60,
+  externalReference: `pedido-${Date.now()}`,
+  callback: {
+    successUrl: `${process.env.BACKEND_URL}/success`,
+    cancelUrl: `${process.env.BACKEND_URL}/failure`,
+    expiredUrl: `${process.env.BACKEND_URL}/pending`,
+  },
+  items: formattedItems,
+};
+
+
+
+
+
+
+
+
+
+
+
 
     console.log("📤 Enviando para o Asaas...");
     const response = await fetch(`${ASAAS_BASE_URL}/checkouts`, {
