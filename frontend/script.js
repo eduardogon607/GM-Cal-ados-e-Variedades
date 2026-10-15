@@ -61,7 +61,8 @@ let selectedSize = null;
 let selectedQty = 1;
 let pdPhotoIndex = 0;
 let pdPhotosList = [];
-
+let selectedInstallment = 1; // 1 = à vista | 3 = parcelado
+const INTEREST_RATE = 0.10; // 10% de juros no parcelamento
 /* =========================================
    API — COMUNICAÇÃO COM O BACKEND
    ========================================= */
@@ -354,10 +355,26 @@ function updateCart() {
   const cartTotal = document.getElementById("cartTotal");
 
   const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
-  const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  // Aplica juros se estiver parcelado
+  const interest = selectedInstallment > 1 ? subtotal * INTEREST_RATE : 0;
+  const totalPrice = subtotal + interest;
 
   cartCount.textContent = totalQty;
-  cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
+
+  // Monta o texto do total
+  if (selectedInstallment > 1) {
+    const parcelaValue = totalPrice / selectedInstallment;
+    cartTotal.innerHTML = `
+      R$ ${totalPrice.toFixed(2).replace(".", ",")}
+      <span class="interest-note">
+        ${selectedInstallment}x de R$ ${parcelaValue.toFixed(2).replace(".", ",")} (+10% juros)
+      </span>
+    `;
+  } else {
+    cartTotal.textContent = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
+  }
 
   if (cart.length === 0) {
     cartItems.innerHTML = '<p class="empty-cart">Seu carrinho está vazio 🛒</p>';
@@ -1183,6 +1200,14 @@ async function iniciarPagamento() {
     btn.disabled = true;
     btn.style.opacity = "0.7";
 
+    // Calcula subtotal e juros
+    const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+    const interest = selectedInstallment > 1 ? subtotal * INTEREST_RATE : 0;
+    const totalWithInterest = subtotal + interest;
+
+    // Se estiver parcelado, aplica o valor proporcional em cada item
+    const factor = subtotal > 0 ? totalWithInterest / subtotal : 1;
+
     const response = await fetch(`${BACKEND_URL}/api/create-preference`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1190,10 +1215,12 @@ async function iniciarPagamento() {
         items: cart.map((item) => ({
           id: item.id,
           name: item.name,
-          price: item.price,
+          price: Number((item.price * factor).toFixed(2)), // preço ajustado
           qty: item.qty,
           size: item.size || null,
         })),
+        installment: selectedInstallment,
+        hasInterest: selectedInstallment > 1,
       }),
     });
 
@@ -1221,6 +1248,15 @@ async function iniciarPagamento() {
     btn.style.opacity = "";
   }
 }
+
+
+
+
+
+
+
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const checkoutBtn = document.querySelector(".checkout-btn");
@@ -1253,6 +1289,21 @@ if (btnWhatsapp && whatsappModal) {
   });
 }
 
+
+
+/* =========================================
+   SELETOR DE PARCELAMENTO
+   ========================================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const radios = document.querySelectorAll('input[name="installment"]');
+  radios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      selectedInstallment = parseInt(radio.value);
+      updateCart();
+      if (navigator.vibrate) navigator.vibrate(10);
+    });
+  });
+});
 
 
 /* =========================================

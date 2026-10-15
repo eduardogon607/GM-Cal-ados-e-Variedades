@@ -134,10 +134,41 @@
     <div class="cart-items" id="cartItems">
       <p class="empty-cart">Seu carrinho está vazio 🛒</p>
     </div>
-    <div class="cart-footer">
-      <div class="cart-total">
-        Total: <span id="cartTotal">R$ 0,00</span>
-      </div>
+
+
+   <div class="cart-footer">
+  <!-- Seletor de parcelamento -->
+  <div class="installment-selector" id="installmentSelector">
+    <label class="installment-label">Forma de pagamento:</label>
+
+    <label class="installment-option">
+      <input type="radio" name="installment" value="1" checked />
+      <span class="installment-radio"></span>
+      <span class="installment-text">
+        <strong>À vista</strong>
+        <small>PIX ou Cartão 1x — sem juros</small>
+      </span>
+    </label>
+
+    <label class="installment-option">
+      <input type="radio" name="installment" value="3" />
+      <span class="installment-radio"></span>
+      <span class="installment-text">
+        <strong>Parcelar em até 3x</strong>
+        <small>+10% de juros no total</small>
+      </span>
+    </label>
+  </div>
+
+  <div class="cart-total">
+    Total: <span id="cartTotal">R$ 0,00</span>
+  </div>
+
+  <button class="checkout-btn">Finalizar Compra</button>
+</div>
+
+
+
       <button class="checkout-btn">Finalizar Compra</button>
     </div>
   </aside>
