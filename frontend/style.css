@@ -1745,3 +1745,40 @@ input, select, textarea { font-family: inherit; outline: none; }
 .banner.has-image::after {
   display: none;
 }
+
+
+
+/* =========================================
+   MODAL DE FINALIZAR PEDIDO
+   ========================================= */
+.checkout-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-light);
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.whatsapp-item:has(input[type="radio"]:checked) {
+  border-color: var(--gold);
+  background: var(--gold-bg);
+}
+
+.whatsapp-item:has(input[type="radio"]:checked) .checkout-radio {
+  border-color: var(--gold-dark);
+}
+
+.whatsapp-item:has(input[type="radio"]:checked) .checkout-radio::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+
+
+
+

@@ -421,7 +421,20 @@ productModal.addEventListener("click", (e) => { if (e.target === productModal) c
 pdPrev.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex - 1 + pdPhotosList.length) % pdPhotosList.length; renderPdMedia(); } });
 pdNext.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex + 1) % pdPhotosList.length; renderPdMedia(); } });
 
-// BOTÃO: Enviar para WhatsApp
+
+
+
+
+
+
+
+
+
+// Variável para guardar o produto atual do checkout
+let checkoutProduct = null;
+let checkoutSize = null;
+
+// BOTÃO DO PRODUTO: Abre o modal de checkout
 pdAddBtn.addEventListener("click", () => {
   if (!currentProduct) return;
 
@@ -430,18 +443,59 @@ pdAddBtn.addEventListener("click", () => {
     return showToast("⚠️ Selecione uma opção/tamanho");
   }
 
+  checkoutProduct = currentProduct;
+  checkoutSize = selectedSize;
+
+  // Preenche o resumo do modal
+  document.getElementById("checkoutProductName").textContent = currentProduct.name;
+  let details = `R$ ${Number(currentProduct.price).toFixed(2).replace(".", ",")}`;
+  if (selectedSize) details += ` • Tamanho: ${selectedSize}`;
+  document.getElementById("checkoutProductDetails").textContent = details;
+
+  // Limpa o nome anterior
+  document.getElementById("checkoutName").value = "";
+  
+  // Reseta o radio para o Messias
+  document.querySelector('input[name="vendedor"][value="5591986257230"]').checked = true;
+
+  // Fecha o modal do produto e abre o de checkout
+  closeProductModalFn();
+  openModal(document.getElementById("checkoutModal"));
+});
+
+// BOTÃO FINAL DO CHECKOUT: Envia para o WhatsApp escolhido
+document.getElementById("btnConfirmCheckout").addEventListener("click", () => {
+  const nome = document.getElementById("checkoutName").value.trim();
+  if (!nome) {
+    return showToast("⚠️ Por favor, digite seu nome");
+  }
+
+  const vendedorSelecionado = document.querySelector('input[name="vendedor"]:checked');
+  const numeroWhatsApp = vendedorSelecionado ? vendedorSelecionado.value : "5591986257230";
+
   let mensagem = `*Olá, tenho interesse neste produto:*\n\n`;
-  mensagem += `*Produto:* ${currentProduct.name}\n`;
-  if (selectedSize) mensagem += `*Opção/Tamanho:* ${selectedSize}\n`;
-  mensagem += `*Valor:* R$ ${Number(currentProduct.price).toFixed(2).replace(".", ",")}\n\n`;
+  mensagem += `*Produto:* ${checkoutProduct.name}\n`;
+  if (checkoutSize) mensagem += `*Opção/Tamanho:* ${checkoutSize}\n`;
+  mensagem += `*Valor:* R$ ${Number(checkoutProduct.price).toFixed(2).replace(".", ",")}\n\n`;
+  mensagem += `*Meu nome:* ${nome}\n\n`;
   mensagem += `_Vim pelo catálogo online._`;
 
-  const numeroWhatsApp = "5591986257230"; 
   const url = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
   
   window.open(url, "_blank");
-  closeProductModalFn();
+  closeModal(document.getElementById("checkoutModal"));
 });
+
+
+
+
+
+
+
+
+
+
+
 
 /* =========================================
    SISTEMA DE ADMIN E LOGIN
@@ -555,9 +609,12 @@ if (btnMenuBanner) {
   });
 }
 
+
+
 /* =========================================
    FORMULÁRIO DE EDIÇÃO DO BANNER
    ========================================= */
+
 const bImageInput = document.getElementById("bImage");
 if (bImageInput) {
   bImageInput.addEventListener("change", (e) => {
@@ -573,9 +630,6 @@ if (bImageInput) {
     }
   });
 }
-
-
-
 
 
 
@@ -634,6 +688,7 @@ if (bannerForm) {
 
 
 
+
 /* =========================================
    LISTA DE PRODUTOS NO ADMIN
    ========================================= */
@@ -681,6 +736,7 @@ function renderAdminProducts() {
     });
   });
 }
+
 
 /* =========================================
    UPLOAD DE FOTOS/VÍDEOS (PRODUTOS)
@@ -781,6 +837,8 @@ if (pCategory) {
     }
   });
 }
+
+  
 
 /* =========================================
    ADICIONAR PRODUTO
