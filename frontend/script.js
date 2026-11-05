@@ -505,17 +505,10 @@ logoutBtn.addEventListener("click", () => { sessionStorage.removeItem(SESSION_KE
    NAVEGAÇÃO DO PAINEL ADMIN (CORRIGIDA)
    ========================================= */
 function openAdminPanel() {
-  // Força a exibição do menu e esconde as outras telas
-  const menu = document.getElementById("adminMenuView");
-  const produtos = document.getElementById("adminProductsView");
-  const banner = document.getElementById("adminBannerView");
-
-  if (menu) menu.style.display = "block";
-  if (produtos) produtos.style.display = "none";
-  if (banner) banner.style.display = "none";
-
-  // Prepara os dados por trás
-  renderAdminProducts();
+  // Força o menu a aparecer
+  document.getElementById("adminMenuView").style.display = "block";
+  document.getElementById("adminProductsView").style.display = "none";
+  document.getElementById("adminBannerView").style.display = "none";
   
   // Abre o modal
   openModal(adminPanel);
