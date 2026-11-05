@@ -128,4 +128,37 @@ router.post("/webhook", async (req, res) => {
   }
 });
 
+
+
+// ============================================
+// ROTA TEMPORÁRIA: IMPORTAR PRODUTOS (BACKUP)
+// POST /api/products/import
+// ============================================
+router.post("/products/import", (req, res) => {
+  try {
+    const productsData = req.body;
+    
+    if (!Array.isArray(productsData)) {
+      return res.status(400).json({ error: "Os dados devem ser um array de produtos." });
+    }
+
+    // Salva os dados exatamente como vieram
+    writeProducts(productsData);
+    
+    console.log(`✓ Backup importado: ${productsData.length} produtos restaurados.`);
+    res.json({ success: true, message: `${productsData.length} produtos restaurados com sucesso!` });
+  } catch (error) {
+    console.error("Erro ao importar produtos:", error);
+    res.status(500).json({ error: "Erro ao importar os produtos." });
+  }
+});
+
+
+
+
+
+
+
+
+
 module.exports = router;
