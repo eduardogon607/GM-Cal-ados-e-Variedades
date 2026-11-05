@@ -157,6 +157,62 @@ router.post("/products/import", (req, res) => {
 
 
 
+// ============================================
+// CONFIGURAÇÃO DO BANNER (API)
+// ============================================
+const CONFIG_FILE = path.join(DATA_DIR, "config.json");
+
+// Garante que o arquivo config.json existe
+if (!fs.existsSync(CONFIG_FILE)) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({
+    title: "Coleção Premium",
+    subtitle: "Qualidade e elegância em cada detalhe",
+    imageUrl: ""
+  }, null, 2));
+}
+
+// Rota para buscar o banner (público)
+router.get("/config/banner", (req, res) => {
+  try {
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+    res.json(config);
+  } catch (error) {
+    res.json({ title: "Coleção Premium", subtitle: "Qualidade e elegância em cada detalhe", imageUrl: "" });
+  }
+});
+
+// Rota para atualizar o banner (admin) - Aceita upload de imagem
+router.post("/config/banner", upload.single("bannerImage"), (req, res) => {
+  try {
+    const { title, subtitle } = req.body;
+    let currentConfig = {};
+    
+    try {
+      currentConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+    } catch (e) { currentConfig = {}; }
+
+    const baseUrl = (process.env.BACKEND_URL || "http://localhost:3000").replace(/\/+$/, "");
+    
+    let imageUrl = currentConfig.imageUrl || "";
+    if (req.file) {
+      imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    }
+
+    const newConfig = {
+      title: title || "Coleção Premium",
+      subtitle: subtitle || "Qualidade e elegância em cada detalhe",
+      imageUrl: imageUrl
+    };
+
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(newConfig, null, 2));
+    res.json({ success: true, config: newConfig });
+  } catch (error) {
+    console.error("Erro ao atualizar banner:", error);
+    res.status(500).json({ error: "Erro ao atualizar o banner." });
+  }
+});
+
+
 
 
 

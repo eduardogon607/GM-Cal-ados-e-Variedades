@@ -64,12 +64,14 @@
   </header>
 
   <!-- ================= BANNER ================= -->
-  <section class="banner">
-    <div class="banner-content">
-      <h2>Coleção Premium</h2>
-      <p>Qualidade e elegância em cada detalhe</p>
-    </div>
-  </section>
+  <!-- ================= BANNER ================= -->
+<section class="banner" id="mainBanner" style="background-image: url('');">
+  <div class="banner-overlay"></div>
+  <div class="banner-content">
+    <h2 id="bannerTitle">Coleção Premium</h2>
+    <p id="bannerSubtitle">Qualidade e elegância em cada detalhe</p>
+  </div>
+</section>
 
   <!-- ================= PRODUTOS ================= -->
   <section class="products-section">
@@ -116,6 +118,9 @@
         <h3>🔐 Acesso Administrativo</h3>
         <button class="modal-close" data-close="loginModal">✖</button>
       </div>
+
+
+
       <div class="modal-body">
         <div class="form-group">
           <label for="loginUser">Usuário</label>
@@ -142,7 +147,11 @@
         </div>
       </div>
       
-      <div class="modal-body">
+
+
+
+            <div class="modal-body">
+        
         <!-- TELA 1: MENU INICIAL -->
         <div id="adminMenuView">
           <p style="text-align:center; color:#666; font-size:14px; margin-bottom:20px;">O que você deseja fazer hoje?</p>
@@ -152,7 +161,15 @@
               <span style="font-size: 28px;">📦</span>
               <div>
                 <span style="display:block; font-size: 15px; font-weight: 700; color: var(--gold-dark);">Cadastrar Produtos</span>
-                <span style="display:block; font-size: 11px; font-weight: 400; color: var(--gray);">Adicionar, editar ou excluir itens</span>
+                <span style="display:block; font-size: 11px; font-weight: 400; color: var(--gray);">Adicionar ou excluir itens</span>
+              </div>
+            </button>
+
+            <button id="btnGoToBanner" class="modal-btn" style="display:flex; align-items:center; gap:15px; padding: 20px; background: var(--off-white); border: 2px solid var(--gray-light); color: var(--dark); text-align: left; cursor: pointer;">
+              <span style="font-size: 28px;">🖼️</span>
+              <div>
+                <span style="display:block; font-size: 15px; font-weight: 700; color: #333;">Editar Banner</span>
+                <span style="display:block; font-size: 11px; font-weight: 400; color: var(--gray);">Alterar foto da promoção e título</span>
               </div>
             </button>
           </div>
@@ -172,7 +189,7 @@
             </div>
 
             <div class="form-group">
-              <label>Fotos do produto * <span class="form-help-inline">(até 5 fotos/vídeos)</span></label>
+              <label>Fotos do produto *</label>
               <div class="photo-upload">
                 <input type="file" id="pPhoto" accept="image/*,video/*" multiple hidden />
                 <label for="pPhoto" class="photo-upload-btn" id="photoUploadBtn">
@@ -182,6 +199,103 @@
                 <div class="photo-preview-grid" id="photoPreviewGrid"></div>
               </div>
             </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pPrice">Preço (R$) *</label>
+                <input type="number" id="pPrice" step="0.01" min="0" placeholder="499.90" required />
+              </div>
+              <div class="form-group">
+                <label for="pCategory">Categoria *</label>
+                <select id="pCategory" required>
+                  <option value="">Selecione...</option>
+                  <option value="perfumes">🌸 Perfumes</option>
+                  <option value="calcados">👟 Calçados</option>
+                  <option value="acessorios">🕶️ Acessórios</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" id="subcategoryFormGroup" style="display:none;">
+              <label for="pSubcategory">Subcategoria *</label>
+              <select id="pSubcategory">
+                <option value="">Selecione...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="pDescription">Descrição</label>
+              <textarea id="pDescription" rows="3" placeholder="Descreva o produto..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="pSizes">Tamanhos / Volumes</label>
+              <input type="text" id="pSizes" placeholder="Ex: 37, 38, 39 ou 100ml" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pRating">Avaliação</label>
+                <input type="number" id="pRating" step="0.1" min="0" max="5" value="5.0" />
+              </div>
+              <div class="form-group">
+                <label for="pBadge">Selo</label>
+                <select id="pBadge">
+                  <option value="NOVO">NOVO</option>
+                  <option value="OFF">OFF</option>
+                  <option value="🔥 Top">🔥 Top</option>
+                  <option value="LIMITADO">LIMITADO</option>
+                  <option value="">Nenhum</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="modal-btn primary">Adicionar Produto</button>
+          </form>
+
+          <h4 class="admin-section-title">📦 Produtos Cadastrados (<span id="adminProductCount">0</span>)</h4>
+          <div class="admin-product-list" id="adminProductList"></div>
+        </div>
+
+        <!-- TELA 3: BANNER -->
+        <div id="adminBannerView" style="display: none;">
+          <button class="btn-back-admin" onclick="voltarMenuAdmin()" style="margin-bottom: 15px; color: var(--gold-dark); font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; background: none; border: none;">
+            ← Voltar ao menu
+          </button>
+
+          <h4 class="admin-section-title">🖼️ Editar Banner</h4>
+          <form id="bannerForm" class="admin-form">
+            <div class="form-group">
+              <label for="bTitle">Título Principal</label>
+              <input type="text" id="bTitle" placeholder="Ex: Coleção Premium" required />
+            </div>
+            <div class="form-group">
+              <label for="bSubtitle">Subtítulo (Promoção)</label>
+              <input type="text" id="bSubtitle" placeholder="Ex: Tênis exclusivos com até 50% OFF" />
+            </div>
+            <div class="form-group">
+              <label>Foto do Banner</label>
+              <div class="photo-upload">
+                <input type="file" id="bImage" accept="image/*" hidden />
+                <label for="bImage" class="photo-upload-btn" id="bannerUploadBtn" style="padding: 15px;">
+                  <span class="photo-upload-icon">📷</span>
+                  <span class="photo-upload-text">Selecionar Nova Imagem</span>
+                </label>
+                <div class="photo-preview active" id="bannerPreview" style="margin-top: 10px; height: 120px; border-radius: 8px; display: none;">
+                  <img id="bannerPreviewImg" src="" alt="Preview" style="object-fit: cover; width: 100%; height: 100%;" />
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="modal-btn primary">Salvar Banner</button>
+          </form>
+        </div>
+
+      </div>
+
+
+
+
+
 
             <div class="form-row">
               <div class="form-group">

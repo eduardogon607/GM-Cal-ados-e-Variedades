@@ -2,7 +2,7 @@
    GM CALÇADOS - SCRIPT CATÁLOGO
    ========================================= */
 
-const BACKEND_URL = "https://gm-cal-ados-e-variedades-1.onrender.com"; // Confirme se é a URL correta do seu Render
+const BACKEND_URL = "https://gm-cal-ados-e-variedades-1.onrender.com";
 
 /* =========================================
    SPLASH SCREEN
@@ -33,6 +33,8 @@ let currentProduct = null;
 let selectedSize = null;
 let pdPhotoIndex = 0;
 let pdPhotosList = [];
+let bannerData = { title: "Coleção Premium", subtitle: "Qualidade e elegância em cada detalhe", imageUrl: "" };
+let currentBannerFile = null;
 
 /* =========================================
    API — COMUNICAÇÃO COM O BACKEND
@@ -113,6 +115,40 @@ const SUBCATEGORY_LABELS = {
   oculos: "Óculos",
   chapeus: "Chapéus",
 };
+
+/* =========================================
+   FUNÇÕES DO BANNER
+   ========================================= */
+async function fetchBanner() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/config/banner`);
+    if (response.ok) {
+      bannerData = await response.json();
+      renderBanner();
+    }
+  } catch (error) {
+    console.error("Erro ao buscar banner:", error);
+  }
+}
+
+function renderBanner() {
+  const bannerEl = document.getElementById("mainBanner");
+  const titleEl = document.getElementById("bannerTitle");
+  const subtitleEl = document.getElementById("bannerSubtitle");
+
+  if (titleEl) titleEl.textContent = bannerData.title;
+  if (subtitleEl) subtitleEl.textContent = bannerData.subtitle;
+
+  if (bannerEl) {
+    if (bannerData.imageUrl) {
+      bannerEl.style.backgroundImage = `url('${bannerData.imageUrl}')`;
+      bannerEl.classList.add("has-image");
+    } else {
+      bannerEl.style.backgroundImage = "none";
+      bannerEl.classList.remove("has-image");
+    }
+  }
+}
 
 /* =========================================
    RENDERIZAR PRODUTOS
@@ -385,7 +421,7 @@ productModal.addEventListener("click", (e) => { if (e.target === productModal) c
 pdPrev.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex - 1 + pdPhotosList.length) % pdPhotosList.length; renderPdMedia(); } });
 pdNext.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex + 1) % pdPhotosList.length; renderPdMedia(); } });
 
-// NOVO BOTÃO: Enviar para WhatsApp
+// BOTÃO: Enviar para WhatsApp
 pdAddBtn.addEventListener("click", () => {
   if (!currentProduct) return;
 
@@ -408,7 +444,7 @@ pdAddBtn.addEventListener("click", () => {
 });
 
 /* =========================================
-   SISTEMA DE ADMIN
+   SISTEMA DE ADMIN E LOGIN
    ========================================= */
 const loginModal = document.getElementById("loginModal");
 const adminPanel = document.getElementById("adminPanel");
@@ -465,8 +501,13 @@ loginPassInput.addEventListener("keyup", (e) => { if (e.key === "Enter") tryLogi
 
 logoutBtn.addEventListener("click", () => { sessionStorage.removeItem(SESSION_KEY); closeModal(adminPanel); showToast("👋 Sessão encerrada"); });
 
+/* =========================================
+   NAVEGAÇÃO DO PAINEL ADMIN (CORRIGIDA)
+   ========================================= */
 function openAdminPanel() {
-  voltarMenuAdmin();
+  document.getElementById("adminMenuView").style.display = "block";
+  document.getElementById("adminProductsView").style.display = "none";
+  document.getElementById("adminBannerView").style.display = "none";
   renderAdminProducts();
   openModal(adminPanel);
 }
@@ -474,12 +515,95 @@ function openAdminPanel() {
 window.voltarMenuAdmin = function() {
   document.getElementById("adminMenuView").style.display = "block";
   document.getElementById("adminProductsView").style.display = "none";
+  document.getElementById("adminBannerView").style.display = "none";
 };
 
 document.getElementById("btnGoToProducts").addEventListener("click", () => {
   document.getElementById("adminMenuView").style.display = "none";
   document.getElementById("adminProductsView").style.display = "block";
+  document.getElementById("adminBannerView").style.display = "none";
 });
+
+const btnGoToBanner = document.getElementById("btnGoToBanner");
+if (btnGoToBanner) {
+  btnGoToBanner.addEventListener("click", () => {
+    document.getElementById("adminMenuView").style.display = "none";
+    document.getElementById("adminProductsView").style.display = "none";
+    document.getElementById("adminBannerView").style.display = "block";
+    
+    document.getElementById("bTitle").value = bannerData.title;
+    document.getElementById("bSubtitle").value = bannerData.subtitle;
+    
+    if (bannerData.imageUrl) {
+      document.getElementById("bannerPreviewImg").src = bannerData.imageUrl;
+      document.getElementById("bannerPreview").style.display = "block";
+    } else {
+      document.getElementById("bannerPreview").style.display = "none";
+    }
+  });
+}
+
+/* =========================================
+   FORMULÁRIO DE EDIÇÃO DO BANNER
+   ========================================= */
+const bImageInput = document.getElementById("bImage");
+if (bImageInput) {
+  bImageInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      currentBannerFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById("bannerPreviewImg").src = ev.target.result;
+        document.getElementById("bannerPreview").style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+const bannerForm = document.getElementById("bannerForm");
+if (bannerForm) {
+  bannerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const btn = bannerForm.querySelector("button[type='submit']");
+    const originalText = btn.textContent;
+    btn.textContent = "Salvando...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("title", document.getElementById("bTitle").value);
+    formData.append("subtitle", document.getElementById("bSubtitle").value);
+    if (currentBannerFile) {
+      formData.append("bannerImage", currentBannerFile);
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/config/banner`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Erro ao salvar");
+
+      const data = await response.json();
+      bannerData = data.config;
+      renderBanner();
+      
+      showToast("✓ Banner atualizado com sucesso!");
+      currentBannerFile = null;
+      
+      setTimeout(voltarMenuAdmin, 1000);
+      
+    } catch (error) {
+      showToast("❌ Erro ao salvar o banner.");
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  });
+}
 
 /* =========================================
    LISTA DE PRODUTOS NO ADMIN
@@ -530,7 +654,7 @@ function renderAdminProducts() {
 }
 
 /* =========================================
-   UPLOAD DE FOTOS/VÍDEOS
+   UPLOAD DE FOTOS/VÍDEOS (PRODUTOS)
    ========================================= */
 const pPhotoInput = document.getElementById("pPhoto");
 const photoPreviewGrid = document.getElementById("photoPreviewGrid");
@@ -573,31 +697,33 @@ function renderPhotoPreviews() {
   photoUploadBtn.style.display = currentPhotos.length >= MAX_PHOTOS ? "none" : "flex";
 }
 
-pPhotoInput.addEventListener("change", (e) => {
-  const files = Array.from(e.target.files || []);
-  if (files.length === 0) return;
+if (pPhotoInput) {
+  pPhotoInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-  const remaining = MAX_PHOTOS - currentPhotos.length;
-  const toAdd = files.slice(0, remaining);
-  if (files.length > remaining) showToast(`⚠️ Máximo de ${MAX_PHOTOS} arquivos`);
+    const remaining = MAX_PHOTOS - currentPhotos.length;
+    const toAdd = files.slice(0, remaining);
+    if (files.length > remaining) showToast(`⚠️ Máximo de ${MAX_PHOTOS} arquivos`);
 
-  let processed = 0;
-  toAdd.forEach((file) => {
-    if (file.size > 20 * 1024 * 1024) { showToast(`⚠️ "${file.name}" muito grande`); processed++; return; }
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-    if (!isImage && !isVideo) { showToast(`⚠️ "${file.name}" inválido`); processed++; return; }
+    let processed = 0;
+    toAdd.forEach((file) => {
+      if (file.size > 20 * 1024 * 1024) { showToast(`⚠️ "${file.name}" muito grande`); processed++; return; }
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      if (!isImage && !isVideo) { showToast(`⚠️ "${file.name}" inválido`); processed++; return; }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      currentPhotos.push(ev.target.result);
-      processed++;
-      if (processed === toAdd.length) renderPhotoPreviews();
-    };
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        currentPhotos.push(ev.target.result);
+        processed++;
+        if (processed === toAdd.length) renderPhotoPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+    pPhotoInput.value = "";
   });
-  pPhotoInput.value = "";
-});
+}
 
 /* =========================================
    CATEGORIA + SUBCATEGORIA (form admin)
@@ -612,85 +738,89 @@ const subcategoryOptions = {
   acessorios: [{ value: "oculos", label: "Óculos" }, { value: "chapeus", label: "Chapéus" }],
 };
 
-pCategory.addEventListener("change", () => {
-  const cat = pCategory.value;
-  if (subcategoryOptions[cat]) {
-    pSubcategory.innerHTML = '<option value="">Selecione...</option>' + subcategoryOptions[cat].map((s) => `<option value="${s.value}">${s.label}</option>`).join("");
-    subcategoryFormGroup.style.display = "flex";
-    pSubcategory.required = true;
-  } else {
-    subcategoryFormGroup.style.display = "none";
-    pSubcategory.required = false;
-    pSubcategory.value = "";
-  }
-});
+if (pCategory) {
+  pCategory.addEventListener("change", () => {
+    const cat = pCategory.value;
+    if (subcategoryOptions[cat]) {
+      pSubcategory.innerHTML = '<option value="">Selecione...</option>' + subcategoryOptions[cat].map((s) => `<option value="${s.value}">${s.label}</option>`).join("");
+      subcategoryFormGroup.style.display = "flex";
+      pSubcategory.required = true;
+    } else {
+      subcategoryFormGroup.style.display = "none";
+      pSubcategory.required = false;
+      pSubcategory.value = "";
+    }
+  });
+}
 
 /* =========================================
    ADICIONAR PRODUTO
    ========================================= */
-addProductForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (addProductForm) {
+  addProductForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const name = document.getElementById("pName").value.trim();
-  const price = parseFloat(document.getElementById("pPrice").value);
-  const rating = parseFloat(document.getElementById("pRating").value) || 5.0;
-  const badge = document.getElementById("pBadge").value;
-  const category = pCategory.value;
-  const subcategory = subcategoryOptions[category] ? pSubcategory.value : "";
-  const description = document.getElementById("pDescription").value.trim();
-  const sizesRaw = document.getElementById("pSizes").value.trim();
+    const name = document.getElementById("pName").value.trim();
+    const price = parseFloat(document.getElementById("pPrice").value);
+    const rating = parseFloat(document.getElementById("pRating").value) || 5.0;
+    const badge = document.getElementById("pBadge").value;
+    const category = pCategory.value;
+    const subcategory = subcategoryOptions[category] ? pSubcategory.value : "";
+    const description = document.getElementById("pDescription").value.trim();
+    const sizesRaw = document.getElementById("pSizes").value.trim();
 
-  if (!name || isNaN(price) || price <= 0) return showToast("❌ Preencha nome e preço");
-  if (!category) return showToast("❌ Selecione uma categoria");
-  if (subcategoryOptions[category] && !subcategory) return showToast("❌ Selecione uma subcategoria");
-  if (currentPhotos.length === 0) return showToast("❌ Adicione pelo menos uma foto");
+    if (!name || isNaN(price) || price <= 0) return showToast("❌ Preencha nome e preço");
+    if (!category) return showToast("❌ Selecione uma categoria");
+    if (subcategoryOptions[category] && !subcategory) return showToast("❌ Selecione uma subcategoria");
+    if (currentPhotos.length === 0) return showToast("❌ Adicione pelo menos uma foto");
 
-  const formData = new FormData();
-  formData.append("name", name);
-  formData.append("price", price);
-  formData.append("rating", rating);
-  formData.append("badge", badge);
-  formData.append("category", category);
-  formData.append("subcategory", subcategory);
-  formData.append("description", description);
-  formData.append("sizes", sizesRaw);
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("price", price);
+    formData.append("rating", rating);
+    formData.append("badge", badge);
+    formData.append("category", category);
+    formData.append("subcategory", subcategory);
+    formData.append("description", description);
+    formData.append("sizes", sizesRaw);
 
-  currentPhotos.forEach((base64, index) => {
+    currentPhotos.forEach((base64, index) => {
+      try {
+        const isVideo = base64.startsWith("data:video/");
+        const mimeMatch = base64.match(/data:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+        const ext = isVideo ? (mime.includes("mp4") ? "mp4" : "webm") : (mime.includes("png") ? "png" : "jpg");
+        const blob = base64ToBlob(base64);
+        formData.append("photos", blob, `arquivo-${index + 1}.${ext}`);
+      } catch (err) { console.warn(err); }
+    });
+
+    const submitBtn = addProductForm.querySelector("button[type='submit']");
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "Enviando...";
+    submitBtn.disabled = true;
+
     try {
-      const isVideo = base64.startsWith("data:video/");
-      const mimeMatch = base64.match(/data:(.*?);/);
-      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-      const ext = isVideo ? (mime.includes("mp4") ? "mp4" : "webm") : (mime.includes("png") ? "png" : "jpg");
-      const blob = base64ToBlob(base64);
-      formData.append("photos", blob, `arquivo-${index + 1}.${ext}`);
-    } catch (err) { console.warn(err); }
+      await createProduct(formData);
+      showToast(`✓ "${name}" adicionado!`);
+      await fetchProducts();
+      applyFilters();
+      renderAdminProducts();
+
+      addProductForm.reset();
+      document.getElementById("pRating").value = "5.0";
+      currentPhotos = [];
+      renderPhotoPreviews();
+      subcategoryFormGroup.style.display = "none";
+      pSubcategory.required = false;
+    } catch (error) {
+      showToast("❌ Erro ao salvar produto.");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
   });
-
-  const submitBtn = addProductForm.querySelector("button[type='submit']");
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = "Enviando...";
-  submitBtn.disabled = true;
-
-  try {
-    await createProduct(formData);
-    showToast(`✓ "${name}" adicionado!`);
-    await fetchProducts();
-    applyFilters();
-    renderAdminProducts();
-
-    addProductForm.reset();
-    document.getElementById("pRating").value = "5.0";
-    currentPhotos = [];
-    renderPhotoPreviews();
-    subcategoryFormGroup.style.display = "none";
-    pSubcategory.required = false;
-  } catch (error) {
-    showToast("❌ Erro ao salvar produto.");
-  } finally {
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-  }
-});
+}
 
 /* =========================================
    MODAL DE WHATSAPP (FOOTER)
@@ -714,7 +844,7 @@ if (btnWhatsapp && whatsappModal) {
 }
 
 /* =========================================
-   INIT
+   INIT (ÚNICO)
    ========================================= */
 document.getElementById("searchBtn").addEventListener("click", searchProducts);
 document.getElementById("searchInput").addEventListener("keyup", (e) => { if (e.key === "Enter") searchProducts(); });
@@ -722,5 +852,6 @@ document.getElementById("searchInput").addEventListener("keyup", (e) => { if (e.
 (async function init() {
   console.log("🚀 Iniciando Catálogo GM Calçados...");
   await fetchProducts();
+  await fetchBanner();
   renderProducts();
 })();
