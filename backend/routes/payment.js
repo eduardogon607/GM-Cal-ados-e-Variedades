@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const router = express.Router();
 
 // ============================================
@@ -14,18 +16,49 @@ const ASAAS_HEADERS = {
 };
 
 // ============================================
-// 1. CRIAR CHECKOUT DE PAGAMENTO
+// CONFIGURAÇÃO DE PASTAS DO BANCO
+// ============================================
+const STORAGE_DIR = path.join(__dirname, "..", "storage");
+const DATA_DIR = path.join(STORAGE_DIR, "data");
+const ORDERS_FILE = path.join(DATA_DIR, "pedidos.json");
+
+
+
+const CONFIG_FILE = path.join(DATA_DIR, "config.json");
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(CONFIG_FILE)) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({
+    title: "Coleção Premium",
+    subtitle: "Qualidade e elegância em cada detalhe",
+    imageUrl: ""
+  }, null, 2));
+}
+
+function readOrders() {
+  try { return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8") || "[]"); } catch { return []; }
+}
+function writeOrders(orders) {
+  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+}
+
+// ============================================
+// 1. CRIAR CHECKOUT E SALVAR COMANDA
 // POST /api/create-preference
 // ============================================
 router.post("/create-preference", async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, clienteNome } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "Carrinho vazio ou inválido" });
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: "Carrinho vazio" });
     }
 
-    // Formata itens para o padrão do Asaas
+    // Gera um ID único para o pedido
+    const orderId = `PED-${Date.now()}`;
+    const total = items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+
     const formattedItems = items.map((item) => ({
       name: String(item.name).substring(0, 255),
       description: item.size ? `Tamanho: ${item.size}` : "",
@@ -33,39 +66,33 @@ router.post("/create-preference", async (req, res) => {
       value: Number(item.price),
     }));
 
-    // Corpo da requisição para o Asaas
-    // billingTypes: PIX e CREDIT_CARD (aceita ambos)
-    // chargeTypes: DETACHED (pagamento à vista)
-   
+    // --- SALVA NO BANCO DE DADOS (Como Pendente) ---
+    const orders = readOrders();
+    const newOrder = {
+      id: orderId,
+      cliente: clienteNome || "Cliente não identificado",
+      data: new Date().toLocaleString("pt-BR"),
+      itens: items,
+      total: total,
+      status: "Aguardando Pagamento",
+      linkPagamento: ""
+    };
 
-const checkoutBody = {
-  billingTypes: ["PIX", "CREDIT_CARD"],
-  chargeTypes: ["DETACHED", "INSTALLMENT"], // ← à vista OU parcelado
-  installment: {
-    maxInstallmentCount: 3 // ← máximo de 3 parcelas
-  },
-  minutesToExpire: 60,
-  externalReference: `pedido-${Date.now()}`,
-  callback: {
-    successUrl: `${process.env.BACKEND_URL}/success`,
-    cancelUrl: `${process.env.BACKEND_URL}/failure`,
-    expiredUrl: `${process.env.BACKEND_URL}/pending`,
-  },
-  items: formattedItems,
-};
+    const checkoutBody = {
+      billingTypes: ["PIX", "CREDIT_CARD"],
+      chargeTypes: ["DETACHED", "INSTALLMENT"],
+      installment: { maxInstallmentCount: 3 },
+      minutesToExpire: 60,
+      externalReference: orderId,
+      callback: {
+        successUrl: `${process.env.BACKEND_URL}/success?order=${orderId}`,
+        cancelUrl: `${process.env.BACKEND_URL}/failure`,
+        expiredUrl: `${process.env.BACKEND_URL}/pending`,
+      },
+      items: formattedItems,
+    };
 
-
-
-
-
-
-
-
-
-
-
-
-    console.log("📤 Enviando para o Asaas...");
+    console.log(`📤 Criando pedido ${orderId} no Asaas...`);
     const response = await fetch(`${ASAAS_BASE_URL}/checkouts`, {
       method: "POST",
       headers: ASAAS_HEADERS,
@@ -75,50 +102,44 @@ const checkoutBody = {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ Erro do Asaas:", data);
-      return res.status(response.status).json({ error: "Falha ao criar pagamento", details: data });
+      return res.status(response.status).json({ error: "Falha no Asaas", details: data });
     }
 
-    // Monta a URL do Checkout
     const checkoutUrl = `https://asaas.com/checkoutSession/show?id=${data.id}`;
+    
+    // Salva o link no pedido e atualiza o JSON
+    newOrder.linkPagamento = checkoutUrl;
+    orders.push(newOrder);
+    writeOrders(orders);
 
-    console.log("✅ Checkout criado:", data.id);
-    console.log("   URL:", checkoutUrl);
+    console.log(`✅ Pedido ${orderId} aguardando pagamento.`);
+    res.json({ id: data.id, init_point: checkoutUrl, orderId });
 
-    res.json({
-      id: data.id,
-      init_point: checkoutUrl,
-    });
   } catch (error) {
-    console.error("❌ Erro ao criar preferência:", error);
-    res.status(500).json({ error: "Falha ao criar pagamento", details: error.message });
+    console.error("❌ Erro:", error);
+    res.status(500).json({ error: "Falha ao criar pagamento" });
   }
 });
 
 // ============================================
-// 2. WEBHOOK — RECEBER NOTIFICAÇÃO DO ASAAS
+// 2. WEBHOOK — CONFIRMAR PAGAMENTO E ATUALIZAR
 // POST /api/webhook
 // ============================================
 router.post("/webhook", async (req, res) => {
   try {
     const { event, payment, checkout } = req.body;
-    console.log("📩 Webhook recebido:", event);
+    
+    let refPedido = checkout?.externalReference || payment?.externalReference;
 
-    // Eventos de Checkout
-    if (event === "CHECKOUT_PAID") {
-      console.log("🎉 CHECKOUT PAGO!", checkout?.id);
-    } else if (event === "CHECKOUT_CANCELED") {
-      console.log("❌ Checkout cancelado:", checkout?.id);
-    } else if (event === "CHECKOUT_EXPIRED") {
-      console.log("⏰ Checkout expirado:", checkout?.id);
-    }
+    if ((event === "CHECKOUT_PAID" || event === "PAYMENT_RECEIVED") && refPedido) {
+      const orders = readOrders();
+      const orderIndex = orders.findIndex(o => o.id === refPedido);
 
-    // Eventos de Cobrança (para PIX e Cartão)
-    if (event === "PAYMENT_RECEIVED") {
-      console.log("💰 PAGAMENTO RECEBIDO!");
-      console.log("   ID:", payment?.id);
-      console.log("   Valor: R$", payment?.value);
-      console.log("   Forma:", payment?.billingType);
+      if (orderIndex !== -1) {
+        orders[orderIndex].status = "Pago";
+        writeOrders(orders);
+        console.log(`🎉 Pedido ${refPedido} marcado como PAGO!`);
+      }
     }
 
     res.status(200).send("OK");
@@ -128,93 +149,29 @@ router.post("/webhook", async (req, res) => {
   }
 });
 
-
-
 // ============================================
-// ROTA TEMPORÁRIA: IMPORTAR PRODUTOS (BACKUP)
-// POST /api/products/import
+// 3. ROTA PARA O ADMIN LISTAR OS PEDIDOS
+// GET /api/orders
 // ============================================
-router.post("/products/import", (req, res) => {
-  try {
-    const productsData = req.body;
-    
-    if (!Array.isArray(productsData)) {
-      return res.status(400).json({ error: "Os dados devem ser um array de produtos." });
-    }
-
-    // Salva os dados exatamente como vieram
-    writeProducts(productsData);
-    
-    console.log(`✓ Backup importado: ${productsData.length} produtos restaurados.`);
-    res.json({ success: true, message: `${productsData.length} produtos restaurados com sucesso!` });
-  } catch (error) {
-    console.error("Erro ao importar produtos:", error);
-    res.status(500).json({ error: "Erro ao importar os produtos." });
-  }
+router.get("/orders", (req, res) => {
+  const orders = readOrders();
+  res.json(orders.reverse());
 });
 
-
-
-
-
 // ============================================
-// CONFIGURAÇÃO DO BANNER (API)
+// 4. ROTA PARA BUSCAR UM PEDIDO ESPECÍFICO
+// GET /api/orders/:id
 // ============================================
-const CONFIG_FILE = path.join(DATA_DIR, "config.json");
-
-// Garante que o arquivo config.json existe
-if (!fs.existsSync(CONFIG_FILE)) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify({
-    title: "Coleção Premium",
-    subtitle: "Qualidade e elegância em cada detalhe",
-    imageUrl: ""
-  }, null, 2));
-}
-
-// Rota para buscar o banner (público)
-router.get("/config/banner", (req, res) => {
-  try {
-    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-    res.json(config);
-  } catch (error) {
-    res.json({ title: "Coleção Premium", subtitle: "Qualidade e elegância em cada detalhe", imageUrl: "" });
-  }
+router.get("/orders/:id", (req, res) => {
+  const orders = readOrders();
+  const order = orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Pedido não encontrado" });
+  res.json(order);
 });
-
-// Rota para atualizar o banner (admin) - Aceita upload de imagem
-router.post("/config/banner", upload.single("bannerImage"), (req, res) => {
-  try {
-    const { title, subtitle } = req.body;
-    let currentConfig = {};
-    
-    try {
-      currentConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-    } catch (e) { currentConfig = {}; }
-
-    const baseUrl = (process.env.BACKEND_URL || "http://localhost:3000").replace(/\/+$/, "");
-    
-    let imageUrl = currentConfig.imageUrl || "";
-    if (req.file) {
-      imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-    }
-
-    const newConfig = {
-      title: title || "Coleção Premium",
-      subtitle: subtitle || "Qualidade e elegância em cada detalhe",
-      imageUrl: imageUrl
-    };
-
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(newConfig, null, 2));
-    res.json({ success: true, config: newConfig });
-  } catch (error) {
-    console.error("Erro ao atualizar banner:", error);
-    res.status(500).json({ error: "Erro ao atualizar o banner." });
-  }
-});
-
-
-
-
-
 
 module.exports = router;
+
+
+
+
+
