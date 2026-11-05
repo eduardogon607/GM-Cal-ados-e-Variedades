@@ -474,8 +474,14 @@ document.querySelectorAll("[data-close]").forEach((btn) => {
 
 accountIcon.addEventListener("click", () => {
   const isLogged = sessionStorage.getItem(SESSION_KEY) === "true";
-  if (isLogged) openAdminPanel();
-  else {
+  if (isLogged) {
+    // Força a abertura do menu ao clicar no ícone se já estiver logado
+    document.getElementById("adminMenuView").style.display = "block";
+    document.getElementById("adminProductsView").style.display = "none";
+    document.getElementById("adminBannerView").style.display = "none";
+    renderAdminProducts();
+    openModal(adminPanel);
+  } else {
     loginUserInput.value = ""; loginPassInput.value = ""; loginError.textContent = "";
     openModal(loginModal);
     setTimeout(() => loginUserInput.focus(), 300);
@@ -488,7 +494,15 @@ function tryLogin() {
     loginError.textContent = "";
     closeModal(loginModal);
     showToast("✓ Bem-vindo, Admin!");
-    setTimeout(openAdminPanel, 300);
+    
+    setTimeout(() => {
+      // Força a abertura do menu inicial após o login
+      document.getElementById("adminMenuView").style.display = "block";
+      document.getElementById("adminProductsView").style.display = "none";
+      document.getElementById("adminBannerView").style.display = "none";
+      renderAdminProducts();
+      openModal(adminPanel);
+    }, 300);
   } else {
     loginError.textContent = "❌ Usuário ou senha incorretos";
     loginPassInput.value = ""; loginPassInput.focus();
@@ -502,37 +516,33 @@ loginPassInput.addEventListener("keyup", (e) => { if (e.key === "Enter") tryLogi
 logoutBtn.addEventListener("click", () => { sessionStorage.removeItem(SESSION_KEY); closeModal(adminPanel); showToast("👋 Sessão encerrada"); });
 
 /* =========================================
-   NAVEGAÇÃO DO PAINEL ADMIN (CORRIGIDA)
+   NAVEGAÇÃO INTERNA DO ADMIN
    ========================================= */
-function openAdminPanel() {
-  // Força o menu a aparecer
-  document.getElementById("adminMenuView").style.display = "block";
-  document.getElementById("adminProductsView").style.display = "none";
-  document.getElementById("adminBannerView").style.display = "none";
-  
-  // Abre o modal
-  openModal(adminPanel);
-}
-
 window.voltarMenuAdmin = function() {
   document.getElementById("adminMenuView").style.display = "block";
   document.getElementById("adminProductsView").style.display = "none";
   document.getElementById("adminBannerView").style.display = "none";
 };
 
-document.getElementById("btnGoToProducts").addEventListener("click", () => {
-  document.getElementById("adminMenuView").style.display = "none";
-  document.getElementById("adminProductsView").style.display = "block";
-  document.getElementById("adminBannerView").style.display = "none";
-});
+// Botão que abre a tela de Produtos
+const btnMenuProdutos = document.getElementById("btnMenuProdutos");
+if (btnMenuProdutos) {
+  btnMenuProdutos.addEventListener("click", () => {
+    document.getElementById("adminMenuView").style.display = "none";
+    document.getElementById("adminProductsView").style.display = "block";
+    document.getElementById("adminBannerView").style.display = "none";
+  });
+}
 
-const btnGoToBanner = document.getElementById("btnGoToBanner");
-if (btnGoToBanner) {
-  btnGoToBanner.addEventListener("click", () => {
+// Botão que abre a tela do Banner
+const btnMenuBanner = document.getElementById("btnMenuBanner");
+if (btnMenuBanner) {
+  btnMenuBanner.addEventListener("click", () => {
     document.getElementById("adminMenuView").style.display = "none";
     document.getElementById("adminProductsView").style.display = "none";
     document.getElementById("adminBannerView").style.display = "block";
     
+    // Preenche os campos do banner
     document.getElementById("bTitle").value = bannerData.title;
     document.getElementById("bSubtitle").value = bannerData.subtitle;
     
@@ -564,6 +574,14 @@ if (bImageInput) {
   });
 }
 
+
+
+
+
+
+/* =========================================
+   FORMULÁRIO DE EDIÇÃO DO BANNER
+   ========================================= */
 const bannerForm = document.getElementById("bannerForm");
 if (bannerForm) {
   bannerForm.addEventListener("submit", async (e) => {
@@ -587,9 +605,12 @@ if (bannerForm) {
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Erro ao salvar");
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao salvar");
+      }
+
       bannerData = data.config;
       renderBanner();
       
@@ -599,13 +620,19 @@ if (bannerForm) {
       setTimeout(voltarMenuAdmin, 1000);
       
     } catch (error) {
-      showToast("❌ Erro ao salvar o banner.");
+      console.error("Erro detalhado:", error);
+      showToast("❌ Erro ao salvar o banner. Tente novamente.");
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
     }
   });
 }
+
+
+
+
+
 
 /* =========================================
    LISTA DE PRODUTOS NO ADMIN
