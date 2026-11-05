@@ -1778,7 +1778,40 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-radius: 50%;
 }
 
+/* Ajuste para os botões de câmera/galeria ficarem lado a lado no celular */
+.photo-upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px dashed var(--gold);
+  border-radius: 10px;
+  background: var(--gold-bg);
+  cursor: pointer;
+  text-align: center;
+  transition: 0.3s;
+}
+
+.photo-upload-btn:active {
+  background: var(--gold-light);
+  transform: scale(0.98);
+}
+
+.photo-upload-btn .photo-upload-icon {
+  font-size: 22px;
+}
+
+.photo-upload-btn .photo-upload-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold-dark);
+}
 
 
 
-
+/* Botão de editar produto no admin */
+.admin-product-item .ap-edit:active {
+  background: #ffc107;
+  color: white;
+}

@@ -36,6 +36,10 @@ let pdPhotosList = [];
 let bannerData = { title: "Coleção Premium", subtitle: "Qualidade e elegância em cada detalhe", imageUrl: "" };
 let currentBannerFile = null;
 
+// Variáveis do checkout (WhatsApp)
+let checkoutProduct = null;
+let checkoutSize = null;
+
 /* =========================================
    API — COMUNICAÇÃO COM O BACKEND
    ========================================= */
@@ -421,19 +425,6 @@ productModal.addEventListener("click", (e) => { if (e.target === productModal) c
 pdPrev.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex - 1 + pdPhotosList.length) % pdPhotosList.length; renderPdMedia(); } });
 pdNext.addEventListener("click", () => { if (pdPhotosList.length > 1) { pdPhotoIndex = (pdPhotoIndex + 1) % pdPhotosList.length; renderPdMedia(); } });
 
-
-
-
-
-
-
-
-
-
-// Variável para guardar o produto atual do checkout
-let checkoutProduct = null;
-let checkoutSize = null;
-
 // BOTÃO DO PRODUTO: Abre o modal de checkout
 pdAddBtn.addEventListener("click", () => {
   if (!currentProduct) return;
@@ -485,17 +476,6 @@ document.getElementById("btnConfirmCheckout").addEventListener("click", () => {
   window.open(url, "_blank");
   closeModal(document.getElementById("checkoutModal"));
 });
-
-
-
-
-
-
-
-
-
-
-
 
 /* =========================================
    SISTEMA DE ADMIN E LOGIN
@@ -609,12 +589,9 @@ if (btnMenuBanner) {
   });
 }
 
-
-
 /* =========================================
    FORMULÁRIO DE EDIÇÃO DO BANNER
    ========================================= */
-
 const bImageInput = document.getElementById("bImage");
 if (bImageInput) {
   bImageInput.addEventListener("change", (e) => {
@@ -631,11 +608,6 @@ if (bImageInput) {
   });
 }
 
-
-
-/* =========================================
-   FORMULÁRIO DE EDIÇÃO DO BANNER
-   ========================================= */
 const bannerForm = document.getElementById("bannerForm");
 if (bannerForm) {
   bannerForm.addEventListener("submit", async (e) => {
@@ -685,13 +657,6 @@ if (bannerForm) {
 
 
 
-
-
-
-
-/* =========================================
-   LISTA DE PRODUTOS NO ADMIN
-   ========================================= */
 function renderAdminProducts() {
   adminProductCount.textContent = products.length;
   if (products.length === 0) {
@@ -716,6 +681,7 @@ function renderAdminProducts() {
           <div class="ap-category">📁 ${catLabel}${subLabel}</div>
           ${sizesLabel}${photosLabel}
         </div>
+        <button class="ap-edit" data-id="${p.id}" title="Editar" style="background:#fff3cd;color:#856404;width:32px;height:32px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;margin-right:4px;">✏️</button>
         <button class="ap-delete" data-id="${p.id}" title="Excluir">🗑️</button>
       </div>
     `;
@@ -735,28 +701,132 @@ function renderAdminProducts() {
       } catch (error) { showToast("❌ Erro ao excluir produto"); }
     });
   });
+
+  adminProductList.querySelectorAll(".ap-edit").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id);
+      const prod = products.find((p) => p.id === id);
+      if (prod) openEditProduct(prod);
+    });
+  });
 }
 
 
+
+
+
+
+
+
+
 /* =========================================
-   UPLOAD DE FOTOS/VÍDEOS (PRODUTOS)
+   EDITAR PRODUTO
    ========================================= */
+let editingProductId = null;
+
+function openEditProduct(product) {
+  editingProductId = product.id;
+
+  // Muda o título e o botão do formulário
+  document.querySelector(".admin-section-title").textContent = "✏️ Editar Produto";
+  const submitBtn = addProductForm.querySelector("button[type='submit']");
+  submitBtn.textContent = "Salvar Alterações";
+
+  // Preenche os campos
+  document.getElementById("pName").value = product.name || "";
+  document.getElementById("pPrice").value = product.price || "";
+  document.getElementById("pRating").value = product.rating || "5.0";
+  document.getElementById("pBadge").value = product.badge || "";
+  document.getElementById("pDescription").value = product.description || "";
+  document.getElementById("pSizes").value = getProductSizesArray(product).join(", ");
+  document.getElementById("pCategory").value = product.category || "";
+
+  // Força o evento de change na categoria para carregar as subcategorias
+  document.getElementById("pCategory").dispatchEvent(new Event("change"));
+  setTimeout(() => {
+    document.getElementById("pSubcategory").value = product.subcategory || "";
+  }, 50);
+
+  // Carrega as fotos atuais no preview
+  currentPhotos = [];
+  const photos = (Array.isArray(product.photos) && product.photos.length > 0)
+    ? product.photos
+    : (product.photo ? [product.photo] : []);
+  currentPhotos = [...photos];
+  renderPhotoPreviews();
+
+  // Rola até o formulário
+  document.getElementById("adminProductsView").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
+
+
+
+
+
+
+
+/* =========================================
+   UPLOAD DE FOTOS/VÍDEOS (CÂMERA + GALERIA)
+   ========================================= */
+const pPhotoCamera = document.getElementById("pPhotoCamera");
 const pPhotoInput = document.getElementById("pPhoto");
 const photoPreviewGrid = document.getElementById("photoPreviewGrid");
-const photoUploadBtn = document.getElementById("photoUploadBtn");
 const MAX_PHOTOS = 5;
 let currentPhotos = [];
 
+// Função que processa os arquivos (vindos da câmera ou da galeria)
+function processSelectedFiles(files) {
+  if (files.length === 0) return;
+
+  const remaining = MAX_PHOTOS - currentPhotos.length;
+  const toAdd = Array.from(files).slice(0, remaining);
+  
+  if (files.length > remaining) showToast(`⚠️ Máximo de ${MAX_PHOTOS} arquivos`);
+
+  let processed = 0;
+  toAdd.forEach((file) => {
+    if (file.size > 20 * 1024 * 1024) { showToast(`⚠️ "${file.name}" é muito grande`); processed++; return; }
+    
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) { showToast(`⚠️ "${file.name}" inválido`); processed++; return; }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      currentPhotos.push(ev.target.result);
+      processed++;
+      if (processed === toAdd.length) renderPhotoPreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Escuta o input da câmera
+if (pPhotoCamera) {
+  pPhotoCamera.addEventListener("change", (e) => {
+    processSelectedFiles(e.target.files);
+    pPhotoCamera.value = ""; // Limpa para permitir tirar outra foto
+  });
+}
+
+// Escuta o input da galeria/vídeo
+if (pPhotoInput) {
+  pPhotoInput.addEventListener("change", (e) => {
+    processSelectedFiles(e.target.files);
+    pPhotoInput.value = ""; // Limpa para permitir escolher novamente
+  });
+}
+
+// Função que renderiza os previews
 function renderPhotoPreviews() {
   if (currentPhotos.length === 0) {
     photoPreviewGrid.classList.remove("active");
-    photoUploadBtn.classList.remove("compact");
-    photoUploadBtn.style.display = "flex";
     photoPreviewGrid.innerHTML = "";
     return;
   }
 
-  photoUploadBtn.classList.add("compact");
   photoPreviewGrid.classList.add("active");
 
   photoPreviewGrid.innerHTML = currentPhotos.map((src, i) => {
@@ -777,36 +847,6 @@ function renderPhotoPreviews() {
       currentPhotos.splice(parseInt(btn.dataset.index), 1);
       renderPhotoPreviews();
     });
-  });
-
-  photoUploadBtn.style.display = currentPhotos.length >= MAX_PHOTOS ? "none" : "flex";
-}
-
-if (pPhotoInput) {
-  pPhotoInput.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const remaining = MAX_PHOTOS - currentPhotos.length;
-    const toAdd = files.slice(0, remaining);
-    if (files.length > remaining) showToast(`⚠️ Máximo de ${MAX_PHOTOS} arquivos`);
-
-    let processed = 0;
-    toAdd.forEach((file) => {
-      if (file.size > 20 * 1024 * 1024) { showToast(`⚠️ "${file.name}" muito grande`); processed++; return; }
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/");
-      if (!isImage && !isVideo) { showToast(`⚠️ "${file.name}" inválido`); processed++; return; }
-
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        currentPhotos.push(ev.target.result);
-        processed++;
-        if (processed === toAdd.length) renderPhotoPreviews();
-      };
-      reader.readAsDataURL(file);
-    });
-    pPhotoInput.value = "";
   });
 }
 
@@ -838,11 +878,8 @@ if (pCategory) {
   });
 }
 
-  
 
-/* =========================================
-   ADICIONAR PRODUTO
-   ========================================= */
+
 if (addProductForm) {
   addProductForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -861,35 +898,76 @@ if (addProductForm) {
     if (subcategoryOptions[category] && !subcategory) return showToast("❌ Selecione uma subcategoria");
     if (currentPhotos.length === 0) return showToast("❌ Adicione pelo menos uma foto");
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("price", price);
-    formData.append("rating", rating);
-    formData.append("badge", badge);
-    formData.append("category", category);
-    formData.append("subcategory", subcategory);
-    formData.append("description", description);
-    formData.append("sizes", sizesRaw);
-
-    currentPhotos.forEach((base64, index) => {
-      try {
-        const isVideo = base64.startsWith("data:video/");
-        const mimeMatch = base64.match(/data:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-        const ext = isVideo ? (mime.includes("mp4") ? "mp4" : "webm") : (mime.includes("png") ? "png" : "jpg");
-        const blob = base64ToBlob(base64);
-        formData.append("photos", blob, `arquivo-${index + 1}.${ext}`);
-      } catch (err) { console.warn(err); }
-    });
-
     const submitBtn = addProductForm.querySelector("button[type='submit']");
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = "Enviando...";
+    submitBtn.textContent = editingProductId ? "Salvando..." : "Enviando...";
     submitBtn.disabled = true;
 
     try {
-      await createProduct(formData);
-      showToast(`✓ "${name}" adicionado!`);
+      if (editingProductId) {
+        // ============ EDIÇÃO ============
+        // Separa fotos antigas (URLs) das novas (base64)
+        const keepPhotos = currentPhotos.filter((p) => p.startsWith("http"));
+        const newPhotos = currentPhotos.filter((p) => p.startsWith("data:"));
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("price", price);
+        formData.append("rating", rating);
+        formData.append("badge", badge);
+        formData.append("category", category);
+        formData.append("subcategory", subcategory);
+        formData.append("description", description);
+        formData.append("sizes", sizesRaw);
+        formData.append("keepPhotos", JSON.stringify(keepPhotos));
+
+        newPhotos.forEach((base64, index) => {
+          try {
+            const isVideo = base64.startsWith("data:video/");
+            const mimeMatch = base64.match(/data:(.*?);/);
+            const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+            const ext = isVideo ? (mime.includes("mp4") ? "mp4" : "webm") : (mime.includes("png") ? "png" : "jpg");
+            const blob = base64ToBlob(base64);
+            formData.append("photos", blob, `edit-${index + 1}.${ext}`);
+          } catch (err) { console.warn(err); }
+        });
+
+        const res = await fetch(`${BACKEND_URL}/api/products/${editingProductId}`, {
+          method: "PUT",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Erro ao editar");
+        showToast(`✓ "${name}" atualizado!`);
+        editingProductId = null;
+      } else {
+        // ============ CRIAÇÃO ============
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("price", price);
+        formData.append("rating", rating);
+        formData.append("badge", badge);
+        formData.append("category", category);
+        formData.append("subcategory", subcategory);
+        formData.append("description", description);
+        formData.append("sizes", sizesRaw);
+
+        currentPhotos.forEach((base64, index) => {
+          try {
+            const isVideo = base64.startsWith("data:video/");
+            const mimeMatch = base64.match(/data:(.*?);/);
+            const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+            const ext = isVideo ? (mime.includes("mp4") ? "mp4" : "webm") : (mime.includes("png") ? "png" : "jpg");
+            const blob = base64ToBlob(base64);
+            formData.append("photos", blob, `arquivo-${index + 1}.${ext}`);
+          } catch (err) { console.warn(err); }
+        });
+
+        await createProduct(formData);
+        showToast(`✓ "${name}" adicionado!`);
+      }
+
+      // Recarrega a lista e reseta o form
       await fetchProducts();
       applyFilters();
       renderAdminProducts();
@@ -900,14 +978,24 @@ if (addProductForm) {
       renderPhotoPreviews();
       subcategoryFormGroup.style.display = "none";
       pSubcategory.required = false;
+
+      // Restaura o título e o botão
+      document.querySelector(".admin-section-title").textContent = "➕ Adicionar Novo Produto";
+      submitBtn.textContent = "Adicionar Produto";
+
     } catch (error) {
+      console.error(error);
       showToast("❌ Erro ao salvar produto.");
     } finally {
-      submitBtn.textContent = originalText;
       submitBtn.disabled = false;
+      if (editingProductId) submitBtn.textContent = "Salvar Alterações";
     }
   });
 }
+
+
+
+
 
 /* =========================================
    MODAL DE WHATSAPP (FOOTER)

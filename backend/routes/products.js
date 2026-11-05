@@ -469,7 +469,65 @@ router.post("/config/banner", upload.single("bannerImage"), (req, res) => {
 
 
 
+// ============================================
+// 4. EDITAR PRODUTO (admin)
+// PUT /api/products/:id
+// ============================================
+router.put("/products/:id", upload.array("photos", 5), (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const products = readProducts();
+    const index = products.findIndex((p) => p.id === id);
+    if (index === -1) return res.status(404).json({ error: "Produto não encontrado" });
 
+    const { name, price, rating, badge, category, subcategory, description, sizes, keepPhotos } = req.body;
+    const currentProduct = products[index];
+
+    // Fotos antigas que o usuário manteve (enviadas como string JSON)
+    let photos = [];
+    if (keepPhotos) {
+      try { photos = JSON.parse(keepPhotos); } catch(e) { photos = []; }
+    }
+
+    // Novas fotos enviadas
+    const baseUrl = (process.env.BACKEND_URL || "http://localhost:3000").replace(/\/+$/, "");
+    (req.files || []).forEach((file) => {
+      photos.push(`${baseUrl}/uploads/${file.filename}`);
+    });
+
+    if (photos.length === 0) {
+      return res.status(400).json({ error: "O produto precisa ter pelo menos uma foto" });
+    }
+
+    const sizesArray = sizes
+      ? String(sizes).split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const updatedProduct = {
+      ...currentProduct,
+      name: name || currentProduct.name,
+      price: price ? parseFloat(price) : currentProduct.price,
+      rating: rating ? parseFloat(rating) : currentProduct.rating,
+      badge: badge !== undefined ? badge : currentProduct.badge,
+      category: category || currentProduct.category,
+      subcategory: subcategory || "",
+      description: description || "",
+      sizes: sizesArray,
+      photos: photos,
+      photo: photos[0],
+      updatedAt: new Date().toISOString(),
+    };
+
+    products[index] = updatedProduct;
+    writeProducts(products);
+
+    console.log(`✓ Produto editado: ${updatedProduct.name}`);
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Erro ao editar produto:", error);
+    res.status(500).json({ error: "Erro ao editar produto" });
+  }
+});
 
 
 

@@ -100,7 +100,6 @@
       <div>
         <h4>Pagamento</h4>
         <p>Cartão de Débito e Crédito / Pix</p>
-        
       </div>
     </div>
     <p class="copyright">© 2026 GM Calçados e Variedades - Todos os direitos reservados.</p>
@@ -178,17 +177,29 @@
               <label for="pName">Nome do produto *</label>
               <input type="text" id="pName" placeholder="Ex: Tênis Nike Air Max" required />
             </div>
+            
+            <!-- NOVO CAMPO DE UPLOAD (CÂMERA + GALERIA) -->
             <div class="form-group">
-              <label>Fotos do produto *</label>
+              <label>Fotos/Vídeos do produto * <span class="form-help-inline">(até 5 arquivos)</span></label>
               <div class="photo-upload">
+                <input type="file" id="pPhotoCamera" accept="image/*" capture="environment" hidden />
                 <input type="file" id="pPhoto" accept="image/*,video/*" multiple hidden />
-                <label for="pPhoto" class="photo-upload-btn" id="photoUploadBtn">
-                  <span class="photo-upload-icon">📷</span>
-                  <span class="photo-upload-text">Clique para adicionar fotos/vídeos</span>
-                </label>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                  <label for="pPhotoCamera" class="photo-upload-btn" style="flex: 1; padding: 15px 10px;">
+                    <span class="photo-upload-icon">📸</span>
+                    <span class="photo-upload-text">Tirar Foto</span>
+                  </label>
+                  <label for="pPhoto" class="photo-upload-btn" style="flex: 1; padding: 15px 10px;">
+                    <span class="photo-upload-icon">🖼️</span>
+                    <span class="photo-upload-text">Galeria / Vídeo</span>
+                  </label>
+                </div>
+
                 <div class="photo-preview-grid" id="photoPreviewGrid"></div>
               </div>
             </div>
+
             <div class="form-row">
               <div class="form-group">
                 <label for="pPrice">Preço (R$) *</label>
@@ -347,8 +358,6 @@
     </div>
   </div>
 
-
-
   <!-- ================= MODAL DE FINALIZAR PEDIDO ================= -->
   <div class="modal-overlay" id="checkoutModal">
     <div class="modal">
@@ -410,19 +419,10 @@
     </div>
   </div>
 
-
-
-
-
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
-
-<script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 
 </body>
 </html>
-
-
-
-
