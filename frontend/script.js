@@ -212,11 +212,38 @@ function renderProducts(list = products) {
    ========================================= */
 function applyFilters() {
   let list = [...products];
-  if (currentFilter.category) list = list.filter((p) => p.category === currentFilter.category);
-  if (currentFilter.subcategory) list = list.filter((p) => p.subcategory === currentFilter.subcategory);
-  if (currentFilter.term) list = list.filter((p) => p.name.toLowerCase().includes(currentFilter.term.toLowerCase()));
+  
+  if (currentFilter.category) {
+    list = list.filter((p) => p.category === currentFilter.category);
+  }
+  
+  if (currentFilter.subcategory) {
+    list = list.filter((p) => p.subcategory === currentFilter.subcategory);
+  }
+  
+  if (currentFilter.term) {
+    const term = currentFilter.term.toLowerCase();
+    list = list.filter((p) => {
+      const nameMatch = p.name.toLowerCase().includes(term);
+      const catLabel = CATEGORY_LABELS[p.category] ? CATEGORY_LABELS[p.category].toLowerCase() : "";
+      const subLabel = SUBCATEGORY_LABELS[p.subcategory] ? SUBCATEGORY_LABELS[p.subcategory].toLowerCase() : "";
+      
+      return nameMatch || 
+             (p.category && p.category.toLowerCase().includes(term)) || 
+             (p.subcategory && p.subcategory.toLowerCase().includes(term)) ||
+             catLabel.includes(term) ||
+             subLabel.includes(term);
+    });
+  }
+  
   renderProducts(list);
 }
+
+
+
+
+
+
 
 function filterByCategory(category) {
   currentFilter = { category, subcategory: null, term: "" };
@@ -243,13 +270,42 @@ function scrollToProducts() {
   setTimeout(() => { document.querySelector(".products-section").scrollIntoView({ behavior: "smooth", block: "start" }); }, 150);
 }
 
+
+
 function searchProducts() {
-  const term = document.getElementById("searchInput").value.trim();
+  const term = document.getElementById("searchInput").value.trim().toLowerCase();
   currentFilter = { category: null, subcategory: null, term };
   closeSubcategory();
-  applyFilters();
-  if (term) scrollToProducts();
+
+  let list = [...products];
+
+  if (term) {
+    // Filtra por Nome OU Categoria OU Subcategoria
+    list = products.filter((p) => {
+      const nameMatch = p.name.toLowerCase().includes(term);
+      const categoryMatch = p.category && p.category.toLowerCase().includes(term);
+      const subMatch = p.subcategory && p.subcategory.toLowerCase().includes(term);
+      
+      // Também busca pelas labels (ex: "Calçados", "Masculino", "Casual")
+      const catLabel = CATEGORY_LABELS[p.category] ? CATEGORY_LABELS[p.category].toLowerCase() : "";
+      const subLabel = SUBCATEGORY_LABELS[p.subcategory] ? SUBCATEGORY_LABELS[p.subcategory].toLowerCase() : "";
+      
+      return nameMatch || categoryMatch || subMatch || catLabel.includes(term) || subLabel.includes(term);
+    });
+  }
+
+  renderProducts(list);
+
+  if (term) {
+    // Muda o título da seção para mostrar o que foi pesquisado
+    document.getElementById("productsTitle").textContent = `🔍 Resultado para "${term}"`;
+    scrollToProducts();
+  }
 }
+
+
+
+
 
 /* =========================================
    SUBCATEGORIAS
@@ -276,10 +332,16 @@ const subcategories = {
     title: "🕶️ Acessórios", 
     items: [
       { icon: "🕶️", label: "Óculos", value: "oculos" }, 
-      { icon: "🧢", label: "Chapéus", value: "chapeus" }
+      { icon: "🧢", label: "Chapéus", value: "chapeus" },
+      { icon: "⌚", label: "Relógios", value: "relogios" } // <-- NOVO
     ] 
   },
 };
+
+
+
+
+
 
 const subPanel = document.getElementById("subcategoryPanel");
 const subGrid = document.getElementById("subcategoryGrid");
